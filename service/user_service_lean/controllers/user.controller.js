@@ -2,6 +2,8 @@ import sendEmail from '../config/sendEmail.js';
 import UserModel from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
 import verifyEmailTemplate from '../utils/verifyEmailTemplate.js';
+import generateAccessToken from '../utils/generatedAccessToken.js';
+import generateRefreshToken from '../utils/generateRefreshToken.js';
 
 
 export async function registerUserController(request,response) {
@@ -137,6 +139,65 @@ export async function loginController(request,response) {
                 sucess : false
             })
         }
+
+       
+
+        //generate refresh token and update in database
+        const accesstoken = await generateAccessToken(user._id)
+        const refreshtoken = await generateRefreshToken(user._id)
+
+        const cookieOptions = {
+            httponly : true,
+            secure  : true,
+            sameSite : "none",
+
+        }
+        response.cookie('accessToken',accesstoken,cookieOptions)
+        response.cookie('refreshToken',refreshtoken,cookieOptions)
+
+        return response.status(200).json({
+            message : "Login successful",
+            error : false,
+            sucess : true,
+            data : {
+                accesstoken,
+                refreshtoken
+            }
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message : error.message || error,
+            error : true,
+            sucess : false
+        })
+    }
+}
+
+//logout controller
+export async function logoutController(request,response) {
+    try {
+        const userid = request.userId;
+        const cookieOptions = {
+            httponly : true,
+            secure  : true,
+            sameSite : "none",
+        }
+        response.clearCookie('accessToken', cookieOptions);
+        response.clearCookie('refreshToken', cookieOptions);
+
+
+        const removeRefreshToken = await UserModel.findByIdAndUpdate(
+            userid ,
+            { refresh_token : "" }
+        )
+
+        return response.status(200).json({
+            message : "Logout successful",
+            error : false,
+            sucess : true
+        })
+
     } catch (error) {
         return response.status(500).json({
             message : error.message || error,
