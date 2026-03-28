@@ -20,7 +20,7 @@ const auth = (request,response,next)=>{
             })
         }
         console.log("decoded",decoded)
-        request.userId = decoded.id
+        request.userId = decoded.id 
         next()
 
     } catch (error) {
