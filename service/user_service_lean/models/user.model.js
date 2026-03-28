@@ -45,18 +45,18 @@ const userSchema = new mongoose.Schema({
             ref : 'address'
         }
     ],
-    shopping_cart : [
-        {
-            type : mongoose.Schema.ObjectId,
-            ref : 'cartProduct'
-        }
-    ],
-    orderHistory : [
-        {
-            type : mongoose.Schema.ObjectId,
-            ref : 'order'
-        }
-    ],
+    // shopping_cart : [
+    //     {
+    //         type : mongoose.Schema.ObjectId,
+    //         ref : 'cartProduct'
+    //     }
+    // ],
+    // orderHistory : [
+    //     {
+    //         type : mongoose.Schema.ObjectId,
+    //         ref : 'order'
+    //     }
+    // ],
     forgot_password_otp : {
         type : String,
         default : null
