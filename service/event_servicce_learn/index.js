@@ -21,7 +21,7 @@ app.use(helmet({
     contentSecurityPolicy: false,
 }))
 
-const PORT = 8081 || process.env.PORT;
+const PORT = process.env.PORT || 8081;
 app.get("/",(req,res)=>{
     res.json({
         message : "Event service is running on port " + PORT

@@ -1,0 +1,22 @@
+# Dependencies
+**/node_modules/
+
+# Logs
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/*.log
+
+# Env files
+**/.env
+**/.env.*
+!**/.env.example
+
+# OS and editor
+.DS_Store
+.vscode/settings.json
+
+# Build/cache artifacts
+**/.cache/
+**/dist/
+**/build/

@@ -1,0 +1,88 @@
+name: Deploy to AWS ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Docker image tag to deploy (use latest or short SHA)
+        required: true
+        default: latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Download current user-service task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${{ secrets.ECS_USER_TASK_DEFINITION }}" \
+            --query taskDefinition > user-task-definition.json
+
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy
+          )' user-task-definition.json > user-task-definition-clean.json
+
+      - name: Render user-service task definition with image
+        id: user-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: user-task-definition-clean.json
+          container-name: ${{ secrets.ECS_USER_CONTAINER_NAME }}
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/microservice-learn-user-service:${{ github.event.inputs.image_tag }}
+
+      - name: Deploy user-service task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.user-task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_USER_SERVICE_NAME }}
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true
+
+      - name: Download current event-service task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${{ secrets.ECS_EVENT_TASK_DEFINITION }}" \
+            --query taskDefinition > event-task-definition.json
+
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy
+          )' event-task-definition.json > event-task-definition-clean.json
+
+      - name: Render event-service task definition with image
+        id: event-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: event-task-definition-clean.json
+          container-name: ${{ secrets.ECS_EVENT_CONTAINER_NAME }}
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/microservice-learn-event-service:${{ github.event.inputs.image_tag }}
+
+      - name: Deploy event-service task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.event-task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_EVENT_SERVICE_NAME }}
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true
